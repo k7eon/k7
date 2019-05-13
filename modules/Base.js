@@ -10,11 +10,14 @@ class Base {
   }
 
   parseEmailPassword(line) {
-    let delimiter = ';';
     let d1        = line.indexOf(';');
     let d2        = line.indexOf(':');
-    if (d1 === -1 && d2 === -1) return [null, null];
-    if (d1 === -1 || d1 > d2) delimiter = ':';
+    let delimiter = null;
+
+    if (d1 >= 0 && d2 >= 0) delimiter = (d1 < d2) ? ';' : ':';
+    if (d1 === -1 && d2 !== -1) delimiter = ':';
+    if (d2 === -1 && d1 !== -1) delimiter = ';';
+
     let left  = line.substring(0, line.indexOf(delimiter));
     let right = line.substring(line.indexOf(delimiter) + 1);
     return [left, right];
