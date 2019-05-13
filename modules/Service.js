@@ -108,12 +108,12 @@ class Service {
     if (this.isBadProxyError(e)
       || e.message.indexOf('Parse Error') !== -1
       || e.message.indexOf('timeout') !== -1) {
-      b.metrics.timeout++;
+      b.metrics.inc('timeout');
       return true;
     }
 
     if (b.metrics.metrics[e.message] !== undefined) {
-      b.metrics.inc([e.message]);
+      b.metrics.inc(e.message);
       return true;
     }
 
