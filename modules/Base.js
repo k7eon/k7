@@ -187,6 +187,7 @@ class Base {
    * Remove all lines from this.accounts that includes 'email' attr in 'path' file
    * Update this.accounts
    * @param {string} by          any attribute from this.accounts[0]
+   * @param {array} lines
    * @param {string|array} path  path/s to file whose lines will be removed from this.accounts through indexOf
    * @return {Array}
    */
@@ -195,23 +196,24 @@ class Base {
     let paths = (typeof path === 'string') ? [path] : path;
     let before = lines.length;
 
+    let result = [];
     for (let path of paths) {
       console.time(path);
 
       let source = fs.readFileSync(path, 'utf8');
 
-      let lines = _.filter(lines, (line) => {
+      result = _.filter(lines, (line) => {
         let thing = line[by];
         return (source.indexOf(thing) === -1);
       });
 
-      let now = lines.length;
+      let now = result.length;
       let removed = before-now;
 
       console.timeEnd(path);
       console.log(path, {removed, now});
     }
-    return lines;
+    return result;
   }
 }
 
