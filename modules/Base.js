@@ -196,6 +196,8 @@ class Base {
     let paths = (typeof path === 'string') ? [path] : path;
     let before = lines.length;
 
+    if (!paths || _.compact(paths)) return lines;
+
     let result = [];
     for (let path of paths) {
       console.time(path);
