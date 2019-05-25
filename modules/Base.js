@@ -196,7 +196,7 @@ class Base {
     let paths = (typeof path === 'string') ? [path] : path;
     let before = lines.length;
 
-    if (!paths || _.compact(paths)) return lines;
+    if (!paths || !_.compact(paths).length) return lines;
 
     let result = [];
     for (let path of paths) {
