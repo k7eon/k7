@@ -198,13 +198,13 @@ class Base {
 
     if (!paths || !_.compact(paths).length) return lines;
 
-    let result = [];
+    let result = lines;
     for (let path of paths) {
       console.time(path);
 
       let source = fs.readFileSync(path, 'utf8');
 
-      result = _.filter(lines, (line) => {
+      result = _.filter(result, (line) => {
         let thing = line[by];
         return (source.indexOf(thing) === -1);
       });
