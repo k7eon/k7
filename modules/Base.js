@@ -194,7 +194,6 @@ class Base {
   removeAccountsFromFileBy(by='email', lines, path = 'files/bad.log') {
     if (!lines.length) return [];
     let paths = (typeof path === 'string') ? [path] : path;
-    let before = lines.length;
 
     if (!paths || !_.compact(paths).length) return lines;
 
@@ -204,6 +203,7 @@ class Base {
 
       let source = fs.readFileSync(path, 'utf8');
 
+      let before = result.length;
       result = _.filter(result, (line) => {
         let thing = line[by];
         return (source.indexOf(thing) === -1);
