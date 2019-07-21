@@ -86,6 +86,8 @@ class Service {
    * @returns {boolean}
    */
   isBadProxyError(e) {
+    if (!e || !e.message) return false;
+
     return e.message.indexOf('sock') !== -1
       || e.message.indexOf('Sock') !== -1
       || e.message.indexOf('connect ECONN') !== -1
