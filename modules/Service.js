@@ -107,6 +107,9 @@ class Service {
   }
 
   isItUsualError(b, e) {
+
+    if (!e.message) return false;
+
     if (this.isBadProxyError(e)
       || e.message.indexOf('Parse Error') !== -1
       || e.message.indexOf('timeout') !== -1) {
