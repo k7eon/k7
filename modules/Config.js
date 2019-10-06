@@ -58,7 +58,7 @@ class Config {
   loadApiKey(CONFIG) {
     const apiKey = './configs/license.txt';
     if (!fs.existsSync(apiKey)) {
-      console.log('Key doesnt exists');
+      console.error('Key doesnt exists');
       return CONFIG;
     }
     let key        = fs.readFileSync(apiKey, 'utf8');
@@ -85,7 +85,7 @@ class Config {
         console.log('Custom config loaded!');
         return result;
       } catch (e) {
-        console.log('e', e);
+        console.error('e', e);
         fs.writeFileSync(configFile, '{}');
       }
     }

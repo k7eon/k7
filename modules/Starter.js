@@ -31,7 +31,7 @@ class Starter {
       try {
         paths = await this.base.loadBasePaths(config.name);
       } catch (e) {
-        console.log('e', e);
+        console.error('e', e);
       }
     }
 
@@ -69,7 +69,7 @@ class Starter {
             if (new_accounts < limit) break;
 
           } catch (e) {
-            console.log('e', e);
+            console.error('e', e);
           }
           await b.timeout(5000);
         }
@@ -117,7 +117,7 @@ class Starter {
 
       return true;
     } catch (e) {
-      console.log('e', e);
+      console.error('e', e);
     }
   }
 

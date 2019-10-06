@@ -1,6 +1,6 @@
-const _      = require('lodash');
-const async  = require('async');
-const fs = require('fs');
+const _     = require('lodash');
+const async = require('async');
+const fs    = require('fs');
 
 /**
  * Using to show statistic
@@ -13,24 +13,24 @@ class Metrics {
    * @param {number} interval    ms, interval of console.log
    */
   constructor(metrics, interval) {
-    this.metrics = metrics;
-    this.left = -1; // how much left
+    this.metrics  = metrics;
+    this.left     = -1; // how much left
     this.interval = interval;
   }
 
   start() {
     this.metricsInterval = setInterval(() => {
-      console.log(this._getMetrics());
+      console.info(this._getMetrics());
     }, this.interval);
   }
 
-  inc(name, amount=1) {
+  inc(name, amount = 1) {
     this.metrics[name] += amount;
   }
 
   _stopShowingMetrics() {
     if (!this.metricsInterval) return;
-    console.log(this._getMetrics());
+    console.info(this._getMetrics());
     clearInterval(this.metricsInterval);
   }
 
@@ -40,12 +40,12 @@ class Metrics {
 }
 
 class Bruteforce {
-  constructor(accounts, agents, metrics, metrics_interval=5000) {
+  constructor(accounts, agents, metrics, metrics_interval = 5000) {
     this.accounts = [];
-    this.agents = [];
+    this.agents   = [];
 
     this.processing_accounts = [];
-    this.queue = null;
+    this.queue               = null;
 
     this.createMetricsCounter(metrics, metrics_interval);
   }
@@ -62,11 +62,17 @@ class Bruteforce {
     setInterval(() => {
       try {
         this.metrics.left = this.leftAccountsAmount();
-      } catch (e) {}
+      } catch (e) {
+      }
     }, 1000);
   }
 
   leftAccountsAmount() {
+    if (this.queue === undefined
+      || this.queue._tasks === undefined
+      || this.processing_accounts === undefined
+    ) return -1;
+
     return this.queue._tasks.length + this.processing_accounts.length;
   }
 
@@ -108,7 +114,7 @@ class Bruteforce {
 
   async getFreeAgent() {
     let agent = this._getAgent();
-    while(!agent) {
+    while (!agent) {
       await this.timeout(5000);
       agent = this._getAgent();
     }
@@ -126,13 +132,13 @@ class Bruteforce {
   }
 
   start(opts) {
-    if (!opts.THREADS)         opts.THREADS       = 100;
-    if (!opts.handlerFunc)     throw new Error('handlerFunc not defined!');
-    if (!opts.whatToQueue)     opts.whatToQueue   = 'accounts';
-    if (!opts.startMessage)    opts.startMessage  = `Start ${opts.whatToQueue} checking`;
-    if (!opts.drainMessage)    opts.drainMessage  = `All ${opts.whatToQueue} have been processed`;
-    if (!opts.drainCallback)   throw new Error('drainCallback not defined!');
-    if (!opts.useProxy)        opts.useProxy      = false;
+    if (!opts.THREADS) opts.THREADS = 100;
+    if (!opts.handlerFunc) throw new Error('handlerFunc not defined!');
+    if (!opts.whatToQueue) opts.whatToQueue = 'accounts';
+    if (!opts.startMessage) opts.startMessage = `Start ${opts.whatToQueue} checking`;
+    if (!opts.drainMessage) opts.drainMessage = `All ${opts.whatToQueue} have been processed`;
+    if (!opts.drainCallback) throw new Error('drainCallback not defined!');
+    if (!opts.useProxy) opts.useProxy = false;
 
     let {THREADS, whatToQueue, startMessage, drainMessage, drainCallback, useProxy} = opts;
 
@@ -155,12 +161,12 @@ class Bruteforce {
         self.removeProcessingTask(task);
 
       } catch (e) {
-        console.log('.start error: ', e);
+        console.error('.start error: ', e);
       }
       return true;
     }, THREADS);
 
-    this.queue.drain = function() {
+    this.queue.drain = function () {
       console.log(drainMessage);
       self.metrics._stopShowingMetrics();
       drainCallback();
@@ -197,7 +203,7 @@ class Bruteforce {
    * @param metricsName     what metrics must be increased by 1
    */
   save(path, line, metricsName = null) {
-    fs.appendFileSync(path, line+'\n');
+    fs.appendFileSync(path, line + '\n');
     if (metricsName) this.metrics.inc(metricsName);
   }
 }

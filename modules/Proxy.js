@@ -37,13 +37,13 @@ class Proxy {
   }
 
   async loadProxiesFromUrl(url) {
-    let {body} = await this.r({method: 'GET', url});
+    let {body} = await this.r({method: 'GET', url, timeout:10000});
 
     let proxies = body.split('\n');
     proxies = _.map(proxies, proxy => {return proxy.replace('\r', '');});
 
     if (!proxies || !proxies.length) {
-      console.log('Cant load proxies from url');
+      console.error('Cant load proxies from url');
       return [];
     }
 

@@ -1,8 +1,13 @@
 const _ = require('lodash');
 const request = require('request');
+const Faker = require('./Faker');
+const uuid = require('uuid/v1');
 
 class Service {
-
+  constructor() {
+    this.faker = new Faker();
+    this.uuid = uuid;
+  }
 
   setApiSettings(apiUrl, apiKey) {
     this.apiUrl = apiUrl;
@@ -22,7 +27,7 @@ class Service {
    * @param config     - all the same for 'request' module
    * @param agent      - for convenience. agent by 'request'.agent
    * @param retryCount - amount of retries if not called 'timeout'
-   * @return {Promise<{response, body}>}
+   * @return {Promise<{statusCode:number, body: string|json, response: object}>}
    * @throws any errors on request
    */
   async r(config, agent = null, retryCount = 3) {
@@ -42,7 +47,13 @@ class Service {
       request(config, (error, response, body) => {
         clearTimeout(t);
         if (error) return reject(error);
-        return resolve({response, body});
+        let statusCode = response.statusCode;
+
+        if (statusCode === 407) reject(new Error('407 proxy not linked'));
+        if (statusCode === 461) reject(new Error('461 port limit reached'));
+        if (statusCode === 561) reject(new Error('561 port limit reached'));
+
+        return resolve({statusCode, body, response});
       });
     })
   }
@@ -123,12 +134,42 @@ class Service {
     }
 
     if (e.message.indexOf('WrongLicense') !== -1) {
-      console.log('WrongLicense');
+      console.error('WrongLicense');
       process.exit(1);
       return true;
     }
 
     return false;
+  }
+
+  /**
+   * Checks does given object contains all needed keys
+   *
+   * hasKey({a:{b:true}}, 'a.b')    // true
+   * hasKey({a:{b:true}}, 'a.b.c')  // false
+   * hasKey('string', 'a.b.c')      // false
+   *
+   * @param {object} object - any object like json
+   * @param {string} keys   - a.b.c.d
+   * @return {boolean}
+   */
+  hasKey(object, keys) {
+    if (!object
+      || !keys
+      || typeof object === 'string') {
+      return false;
+    }
+
+    keys = keys.split('.');
+
+    let obj = object;
+
+    for (let i = 0; i < keys.length; i++) {
+      const key = keys[i];
+      if (obj[key] === undefined) return false;
+      obj = obj[key]
+    }
+    return true
   }
 }
 
