@@ -170,11 +170,11 @@ class Faker {
    * @return {{brand, name, device, model}[]}
    */
   androidDevices() {
-    return androidDevices
+    return androidDevices.deviceList()
   }
 
   androidDevice() {
-    return this._random(androidDevices)
+    return this._random(androidDevices.deviceList())
   }
 
   /**
@@ -184,15 +184,6 @@ class Faker {
    */
   androidVersion(minVersion = 4, maxVersion = 12) {
     return `${_.random(minVersion, maxVersion)}.${_.random(0, 9)}.${_.random(0, 9)}.`
-  }
-
-  /**
-   * @param minVersion
-   * @param maxVersion
-   * @return {string}
-   */
-  iosVersion(minVersion = 11, maxVersion = 12) {
-    return [_.random(minVersion, maxVersion), _.random(0, 1), _.random(1, 4)].join('.');
   }
 
   /**
@@ -233,6 +224,16 @@ class Faker {
   iosDevice() {
     return this._random(this.iosDevices())
   }
+
+  /**
+   * @param minVersion
+   * @param maxVersion
+   * @return {string}
+   */
+  iosVersion(minVersion = 11, maxVersion = 12) {
+    return [_.random(minVersion, maxVersion), _.random(0, 1), _.random(1, 4)].join('.');
+  }
+
 
   /**
    * @return {string[]}
