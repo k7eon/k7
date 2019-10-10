@@ -183,7 +183,7 @@ class Faker {
    * @return {string}
    */
   androidVersion(minVersion = 4, maxVersion = 12) {
-    return `${_.random(minVersion, maxVersion)}.${_.random(0, 9)}.${_.random(0, 9)}.`
+    return `${_.random(minVersion, maxVersion)}.${_.random(0, 9)}.${_.random(0, 9)}`
   }
 
   /**
