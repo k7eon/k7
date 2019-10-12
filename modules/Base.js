@@ -188,7 +188,7 @@ class Base {
       return !removeEmails.has(line[this.left_name])
     });
 
-    console.log('lines.length', lines.length);
+    // console.log('lines.length', lines.length);
 
     let new_amount = lines.length;
     let removed    = old_amount - new_amount;
@@ -290,7 +290,7 @@ class Base {
         let source = fs.readFileSync(path, 'utf8');
         result     = _.filter(result, (line) => {
           let thing = line[by];
-          if (source.indexOf(thing) > -1) console.log(line);
+          // if (source.indexOf(thing) > -1) console.log(line);
           return (source.indexOf(thing) === -1);
         });
 
