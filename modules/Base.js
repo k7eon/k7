@@ -1,7 +1,8 @@
-const {once}   = require('events');
-const readLine = require('readline');
-const fs       = require('fs');
-const _        = require('lodash');
+const {once}           = require('events');
+const readLine         = require('readline');
+const fs               = require('fs');
+const _                = require('lodash');
+const LineByLineReader = require('line-by-line');
 
 class Base {
   constructor(left_name = 'email', right_name = 'password') {
@@ -32,16 +33,16 @@ class Base {
    * @param remove_arr_v2 - [path1, path2, ...]  path can contain any and email
    * @param limit
    */
-  async loadBase(base_path, remove_arr=[], remove_arr_v2=[], limit=2000000) {
-    let reader = readLine.createInterface({
-      input: fs.createReadStream(base_path),
-      crlfDelay: Infinity
+  async loadBase(base_path, remove_arr = [], remove_arr_v2 = [], limit = 2000000) {
+    const reader = new LineByLineReader(base_path, {
+      encoding: 'utf8',
+      skipEmptyLines: true,
     });
 
     let result_lines = [];
 
     let lines      = [];
-    let chunk_size = limit*1.2;
+    let chunk_size = limit * 1.2;
 
     reader.on('line', async (line) => {
       let [left, right] = this.parseEmailPassword(line);
@@ -49,22 +50,29 @@ class Base {
 
       lines.push({[this.left_name]: left, [this.right_name]: right});
 
-      if (lines.length === chunk_size) {
-        reader.pause();
-        result_lines = _.assign(result_lines, await this.removeLines(lines, remove_arr, remove_arr_v2));
-        lines        = [];
-        console.log('collected accounts', result_lines.length);
+      if (lines.length < chunk_size) return;
 
-        if (result_lines.length > limit) {
-          reader.close();
-          return;
-        }
+      // if (lines.length === chunk_size) {
+      reader.pause();
+      result_lines = _.assign(result_lines, await this.removeLines(lines, remove_arr, remove_arr_v2));
+      lines        = [];
+      console.log('collected accounts', result_lines.length);
 
-        reader.resume();
+      if (result_lines.length > limit) {
+        reader.close();
+        return;
       }
+
+      reader.resume();
+      // }
     });
 
-    await once(reader, 'close');
+    reader.on('error', function (err) {
+      console.error('err', err);
+    });
+
+    // await once(reader, 'close');
+    await once(reader, 'end');
 
     if (lines.length > 0) {
       result_lines = _.assign(result_lines, await this.removeLines(lines, remove_arr, remove_arr_v2));
@@ -75,14 +83,14 @@ class Base {
 
   async loadBasePaths(name) {
 
-    let queue_path   = `manager/${name}_queue.txt`;
+    let queue_path = `manager/${name}_queue.txt`;
     if (!fs.existsSync(queue_path)) fs.writeFileSync(queue_path, '');
 
     let reader = readLine.createInterface({
       input: fs.createReadStream(queue_path),
       crlfDelay: Infinity
     });
-    let paths = [];
+    let paths  = [];
     reader.on('line', async (line) => {
       if (!fs.existsSync(line)) {
         return;
@@ -113,13 +121,13 @@ class Base {
 
   /**
    * Load uniq base files as one, removes checked emails, max_lines amount
-   * @param base_paths
-   * @param remove_arr
-   * @param remove_arr_v2
-   * @param max_lines
+   * @param {string[]} base_paths
+   * @param {string[]} remove_arr
+   * @param {string[]} remove_arr_v2
+   * @param {number} max_lines
    * @returns {Promise<Array>}
    */
-  async loadQueue(base_paths, remove_arr, remove_arr_v2, max_lines = 2000000) {
+  async loadQueue(base_paths, remove_arr = [], remove_arr_v2 = [], max_lines = 2000000) {
     console.log('Loading accounts from queue');
     console.log('paths', base_paths.join('\n'));
     let lines = [];
@@ -134,7 +142,67 @@ class Base {
     return lines;
   }
 
+  /**
+   *
+   * @param lines
+   * @param path
+   * @return {Promise<Array>}
+   * @private
+   */
   async _removeLinesFromFile(lines, path) {
+    let self = this;
+
+    console.time(path);
+    const reader = new LineByLineReader(path, {
+      encoding: 'utf8',
+      skipEmptyLines: true,
+    });
+
+    let old_amount = lines.length;
+
+    let emailsSet = new Set(_.map(lines, this.left_name));
+
+    let removeEmails = new Set([]);
+    reader.on('line', async (line) => { // email
+      if (line && line !== "" && emailsSet.has(line)) {
+        removeEmails.add(line);
+        return
+      }
+
+      let [left, right] = this.parseEmailPassword(line);
+
+      if (left && left !== "" && emailsSet.has(left)) {
+        removeEmails.add(left);
+        return
+      }
+
+      if (right && right !== "" && emailsSet.has(right)) {
+        removeEmails.add(right);
+        return
+      }
+    });
+
+    await once(reader, 'end');
+
+    lines = _.filter(lines, (line) => {
+      return !removeEmails.has(line[this.left_name])
+    });
+
+    console.log('lines.length', lines.length);
+
+    let new_amount = lines.length;
+    let removed    = old_amount - new_amount;
+    let now        = new_amount;
+    console.log(path, {removed, now});
+    console.timeEnd(path);
+    return lines;
+  }
+
+  // @deprecated
+  async _removeLinesFromFile_old(lines, path) {
+    let self = this;
+
+    console.time(path);
     let reader = readLine.createInterface({
       input: fs.createReadStream(path),
       crlfDelay: Infinity
@@ -154,18 +222,21 @@ class Base {
       }
 
       let [left, right] = this.parseEmailPassword(line);
-      if (!left) return;
 
       if (emailPass[left] !== undefined) {
         emailPass[left] = undefined;
         return;
       }
+      if (emailPass[right] !== undefined) {
+        emailPass[right] = undefined;
+        return;
+      }
     });
 
-    console.time(path);
     await once(reader, 'close');
 
     lines          = _.compact(_.values(emailPass));
+
     let new_amount = lines.length;
     let removed = old_amount - new_amount;
     let now = new_amount;
@@ -191,7 +262,8 @@ class Base {
    * @param {string|array} path  path/s to file whose lines will be removed from this.accounts through indexOf
    * @return {Array}
    */
-  removeAccountsFromFileBy(by='email', lines, path = 'files/bad.log') {
+  removeAccountsFromFileBy(by = 'email', lines, path = 'files/bad.log') {
+
     if (!lines.length) return [];
     let paths = (typeof path === 'string') ? [path] : path;
 
@@ -201,19 +273,35 @@ class Base {
     for (let path of paths) {
       console.time(path);
 
-      let source = fs.readFileSync(path, 'utf8');
-
       let before = result.length;
-      result = _.filter(result, (line) => {
-        let thing = line[by];
-        return (source.indexOf(thing) === -1);
-      });
+      if (by === 'email') {
+        const emailRegExprG = /(?:[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*|"(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21\x23-\x5b\x5d-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])*")@(?:(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?|\[(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?|[a-z0-9-]*[a-z0-9]:(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21-\x5a\x53-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])+)\])/g;
 
-      let now = result.length;
-      let removed = before-now;
+        let source = fs.readFileSync(path, 'utf8').toLowerCase();
+        let emails = new Set(source.match(emailRegExprG));
+
+        result     = _.filter(result, (line) => {
+          let thing = line[by];
+          return !emails.has(thing.toLowerCase()) // (source.indexOf(thing) === -1);
+        });
+
+      } else {
+
+        let source = fs.readFileSync(path, 'utf8');
+        result     = _.filter(result, (line) => {
+          let thing = line[by];
+          if (source.indexOf(thing) > -1) console.log(line);
+          return (source.indexOf(thing) === -1);
+        });
+
+      }
+
+      let now     = result.length;
+      let removed = before - now;
 
       console.timeEnd(path);
       console.log(path, {removed, now});
+
     }
     return result;
   }
