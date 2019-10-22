@@ -106,7 +106,7 @@ class Proxy {
         if (type === 'oxylabs') return new HttpsProxyAgent(`http://customer-${login}-sessid-${uuidv1()}:${password}@${host}`);
 
         // lum-customer-hl_123123-zone-static:zonepassword@zproxy.lum-superproxy.io:123123
-        if (type === 'luminati') return new HttpsProxyAgent(`http://${login}-session-${uuidv1()}:${password}@${host}`);
+        if (type === 'luminati') return new HttpsProxyAgent(`http://${login}-session-${(1000000 * Math.random())|0}:${password}@${host}`);
       }
 
       throw new Error('Unknown proxy type');
