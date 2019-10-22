@@ -78,7 +78,7 @@ class Proxy {
    * domain:port
    *
    * @param {array} proxies - array of proxies: [ip:port, domain:port, username:password@ip:port]
-   * @param type - [http, https, socks, _http, _https, _socks, _socks4, _socks5, smartproxy, oxylabs
+   * @param type - [http, https, socks, _http, _https, _socks, _socks4, _socks5, smartproxy, oxylabs, lum
    * @returns {Promise<Array>}
    */
   async makeAgents(proxies, type) {
@@ -95,7 +95,7 @@ class Proxy {
       if (type === '_socks4') return new ProxyAgent('socks4://' + proxy);
       if (type === '_socks5') return new ProxyAgent('socks5://' + proxy);
 
-      if (type === 'smartproxy' || type === 'oxylabs') {
+      if (type === 'smartproxy' || type === 'oxylabs' || type === 'lum') {
         let agent = new HttpsProxyAgent('http://' + proxy);
         if (!agent.options.auth || agent.options.auth.indexOf(':') === -1) return;
 
@@ -104,6 +104,9 @@ class Proxy {
 
         if (type === 'smartproxy') return new HttpsProxyAgent(`http://user-${login}-session-${uuidv1()}:${password}@${host}`);
         if (type === 'oxylabs') return new HttpsProxyAgent(`http://customer-${login}-sessid-${uuidv1()}:${password}@${host}`);
+
+        // lum-customer-hl_123123-zone-static:zonepassword@zproxy.lum-superproxy.io:123123
+        if (type === 'luminati') return new HttpsProxyAgent(`http://${login}-session-${uuidv1()}:${password}@${host}`);
       }
 
       throw new Error('Unknown proxy type');
@@ -120,7 +123,7 @@ class Proxy {
 
     if (!proxies.length) return [];
 
-    proxies = this.growthProxies(proxies, 5000);
+    proxies = this.growthProxies(proxies, 10000);
 
     let agents  = await this.makeAgents(proxies, proxyType);
     if (!agents.length) return [];
