@@ -95,7 +95,7 @@ class Proxy {
       if (type === '_socks4') return new ProxyAgent('socks4://' + proxy);
       if (type === '_socks5') return new ProxyAgent('socks5://' + proxy);
 
-      if (type === 'smartproxy' || type === 'oxylabs' || type === 'lum') {
+      if (type === 'smartproxy' || type === 'oxylabs' || type === 'luminati') {
         let agent = new HttpsProxyAgent('http://' + proxy);
         if (!agent.options.auth || agent.options.auth.indexOf(':') === -1) return;
 
