@@ -1,6 +1,6 @@
 {
   "name": "@k7eon/k7",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "",
   "main": "index.js",
   "scripts": {
@@ -21,7 +21,7 @@
     "async": "^2.6.2",
     "events": "^3.0.0",
     "http-proxy-agent": "^2.1.0",
-    "https-proxy-agent": "^2.2.3",
+    "https-proxy-agent": "^3.0.0",
     "line-by-line": "^0.1.6",
     "lodash": "^4.17.11",
     "proxy-agent": "^3.1.1",
