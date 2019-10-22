@@ -9,6 +9,7 @@ const HttpsProxyAgent = require('https-proxy-agent');
 const HttpProxyAgent  = require('http-proxy-agent');
 const SocksProxyAgent = require('socks-proxy-agent');
 const ProxyAgent      = require('proxy-agent');
+const tunnel = require('tunnel');
 
 class Proxy {
 
@@ -71,6 +72,17 @@ class Proxy {
     return results;
   }
 
+  HttpsOverHttp(proxy) {
+    let agent = new HttpProxyAgent('http://' + proxy);
+    return tunnel.httpsOverHttp({
+      proxy: {
+        host: agent.options.hostname, // 'localhost',
+        port: agent.options.port,//3128
+        proxyAuth: agent.options.auth || null, //'user:password',
+      }
+    });
+  }
+
   /**
    * make agent from proxy line
    * username:password@ip:port
@@ -86,7 +98,11 @@ class Proxy {
       if (!proxy) return null;
 
       if (type === 'http') return new HttpProxyAgent('http://' + proxy);
-      if (type === 'https') return new HttpsProxyAgent('http://' + proxy);
+
+      // this way made unhandlet script exit
+      // if (type === 'https') return new HttpsProxyAgent('http://' + proxy);
+      if (type === 'https') return this.HttpsOverHttp(proxy);
+
       if (type === 'socks') return new SocksProxyAgent('socks://' + proxy);
 
       if (type === '_http') return new ProxyAgent('http://' + proxy);
@@ -102,11 +118,20 @@ class Proxy {
         let [login, password] = agent.options.auth.split(':');
         let host              = agent.options.host;
 
-        if (type === 'smartproxy') return new HttpsProxyAgent(`http://user-${login}-session-${uuidv1()}:${password}@${host}`);
-        if (type === 'oxylabs') return new HttpsProxyAgent(`http://customer-${login}-sessid-${uuidv1()}:${password}@${host}`);
+        if (type === 'smartproxy') {
+          // return new HttpsProxyAgent(`http://user-${login}-session-${uuidv1()}:${password}@${host}`);
+          return this.HttpsOverHttp(`user-${login}-session-${uuidv1()}:${password}@${host}`);
+        }
+        if (type === 'oxylabs') {
+          // return new HttpsProxyAgent(`http://customer-${login}-sessid-${uuidv1()}:${password}@${host}`);
+          return this.HttpsOverHttp(`customer-${login}-sessid-${uuidv1()}:${password}@${host}`);
+        }
 
         // lum-customer-hl_123123-zone-static:zonepassword@zproxy.lum-superproxy.io:123123
-        if (type === 'luminati') return new HttpsProxyAgent(`http://${login}-session-${(1000000 * Math.random())|0}:${password}@${host}`);
+        if (type === 'luminati') {
+          // return new HttpsProxyAgent(`http://${login}-session-${(1000000 * Math.random())|0}:${password}@${host}`);
+          return this.HttpsOverHttp(`${login}-session-${(1000000 * Math.random())|0}:${password}@${host}`);
+        }
       }
 
       throw new Error('Unknown proxy type');
