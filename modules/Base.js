@@ -336,7 +336,7 @@ class Base {
       let size = limit;
       let input = base_path;
       let remove1 = _.map(remove_arr, (path) => {return "v1|"+path;});
-      let remove2 = _.map(remove_arr, (path) => {return "v2|"+path;});
+      let remove2 = _.map(remove_arr_v2, (path) => {return "v2|"+path;});
 
       console.info('Using k7_helper.exe for speedup');
 
