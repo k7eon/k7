@@ -13,7 +13,7 @@ class Metrics {
    * @param {number} interval    ms, interval of console.log
    */
   constructor(metrics, interval) {
-    this.metrics  = metrics;
+    this.metrics   = metrics;
     this.left     = -1; // how much left
     this.interval = interval;
   }
