@@ -64,3 +64,6 @@ typings/
 
 package-lock.json
 test
+test2
+
+test/k7_helper.exe

@@ -1,9 +1,10 @@
-const Config = require('./Config');
+const Config     = require('./Config');
 const Bruteforce = require('./Bruteforce');
-const Base = require('./Base');
-const Proxy = require('./Proxy');
-const _ = require('lodash');
-const fs = require('fs');
+const Base       = require('./Base');
+const Proxy      = require('./Proxy');
+const _          = require('lodash');
+const fs         = require('fs');
+const path       = require('path');
 
 class Starter {
 
@@ -15,16 +16,16 @@ class Starter {
    * @param config_opts {object}
    */
   constructor(config_opts) {
-    this.config = (new Config(config_opts)).get();
-    this.base = new Base();
-    this.proxy = new Proxy();
+    this.config     = (new Config(config_opts)).get();
+    this.base       = new Base();
+    this.proxy      = new Proxy();
     this.bruteforce = new Bruteforce([], [], this.config.metrics);
   }
 
   async loadBase() {
-    let config = this.config;
+    let config                                       = this.config;
     let {withoutAccountsFrom, withoutAccountsFromV2} = config;
-    let paths = [config.FILE.source];
+    let paths                                        = [config.FILE.source];
 
     // if queue mode load paths
     if (config.mode && config.mode === 'queue') {
@@ -35,11 +36,19 @@ class Starter {
       }
     }
 
-    const max_lines = 2000000;
-    let accounts = await this.base.loadQueue(paths, withoutAccountsFrom, withoutAccountsFromV2, max_lines);
+    withoutAccountsFrom   = _.map(withoutAccountsFrom, (p) => {
+      return path.resolve(p);
+    });
+    withoutAccountsFromV2 = _.map(withoutAccountsFromV2, (p) => {
+      return path.resolve(p);
+    });
+
+    const max_lines          = 2000000;
+    let accounts             = await this.base.loadQueue(paths, withoutAccountsFrom, withoutAccountsFromV2, max_lines);
     this.bruteforce.accounts = accounts;
 
-    let limit = this.config.THREADS*10;
+    let limit = this.config.THREADS * 10;
+    // reload base file to take more lines...
     if (accounts.length > limit) {
       setTimeout(async () => {
         let b = this.bruteforce;
@@ -61,9 +70,9 @@ class Starter {
 
             b.queue.resume();
 
-            queued_accounts=[];
-            new_accounts=[];
-            free_accounts=[];
+            queued_accounts = [];
+            new_accounts    = [];
+            free_accounts   = [];
 
             // if we loaded less accounts than limit that means that accounts ends
             if (new_accounts < limit) break;
@@ -96,8 +105,8 @@ class Starter {
 
       // load by url v1
       if (config.proxy_url) {
-        let url  = fs.readFileSync(config.FILE.proxies, 'utf8');
-        let self = this;
+        let url                = fs.readFileSync(config.FILE.proxies, 'utf8');
+        let self               = this;
         self.bruteforce.agents = await this.proxy.loadAgentsFromUrl(type, url);
         this.proxy.autoUpdatingFromUrl(proxy_type, url, 10, (agents) => {
           self.bruteforce.agents = agents;
@@ -106,9 +115,9 @@ class Starter {
 
       // load by url v2
       if (proxy_type.indexOf('_url') !== -1) {
-        let url  = fs.readFileSync(config.FILE.proxies, 'utf8');
-        let self = this;
-        let type = proxy_type.split('_url')[0];
+        let url                = fs.readFileSync(config.FILE.proxies, 'utf8');
+        let self               = this;
+        let type               = proxy_type.split('_url')[0];
         self.bruteforce.agents = await this.proxy.loadAgentsFromUrl(type, url);
         this.proxy.autoUpdatingFromUrl(type, url, 10, (agents) => {
           self.bruteforce.agents = agents;
@@ -144,7 +153,8 @@ class Starter {
           return null;
         }
       },
-      drainCallback: () => {}
+      drainCallback: () => {
+      }
     });
   }
 }

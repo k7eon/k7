@@ -3,6 +3,8 @@ const readLine         = require('readline');
 const fs               = require('fs');
 const _                = require('lodash');
 const LineByLineReader = require('line-by-line');
+let spawn          = require('child_process').spawn;
+const path = require('path');
 
 class Base {
   constructor(left_name = 'email', right_name = 'password') {
@@ -132,7 +134,14 @@ class Base {
     console.log('paths', base_paths.join('\n'));
     let lines = [];
     for (let base_path of base_paths) {
-      let temp_lines = await this.loadBase(base_path, remove_arr, remove_arr_v2, max_lines);
+
+      let temp_lines = [];
+      if (!fs.existsSync(base_path)) {
+        temp_lines = await this.loadBase(base_path, remove_arr, remove_arr_v2, max_lines);
+      } else {
+        temp_lines = await this.PrepareLinesViaHelper(base_path, remove_arr, remove_arr_v2, max_lines);
+      }
+
       lines          = _.concat(lines, temp_lines);
       if (lines.length > max_lines) {
         lines.splice(max_lines, lines.length);
@@ -235,11 +244,11 @@ class Base {
 
     await once(reader, 'close');
 
-    lines          = _.compact(_.values(emailPass));
+    lines = _.compact(_.values(emailPass));
 
     let new_amount = lines.length;
-    let removed = old_amount - new_amount;
-    let now = new_amount;
+    let removed    = old_amount - new_amount;
+    let now        = new_amount;
     console.log(path, {removed, now});
     console.timeEnd(path);
     return lines;
@@ -280,7 +289,7 @@ class Base {
         let source = fs.readFileSync(path, 'utf8').toLowerCase();
         let emails = new Set(source.match(emailRegExprG));
 
-        result     = _.filter(result, (line) => {
+        result = _.filter(result, (line) => {
           let thing = line[by];
           return !emails.has(thing.toLowerCase()) // (source.indexOf(thing) === -1);
         });
@@ -305,6 +314,73 @@ class Base {
     }
     return result;
   }
+
+  async PrepareLinesViaHelper(base_path, remove_arr = [], remove_arr_v2 = [], limit = 2000000) {
+    let parseEmailPassword = this.parseEmailPassword;
+    let left = this.left_name;
+    let right = this.right_name;
+
+    console.time('loading...');
+
+    return new Promise((resolve, reject) => {
+      let message = null;
+
+      let exePath = path.resolve('./k7_helper.exe');
+      if (!fs.existsSync(exePath)) {
+        // Do something
+        throw new Error('k7_helper.exe not exists!');
+        process.exit();
+      }
+
+      let start = 0;
+      let size = limit;
+      let input = base_path;
+      let remove1 = _.map(remove_arr, (path) => {return "v1|"+path;});
+      let remove2 = _.map(remove_arr, (path) => {return "v2|"+path;});
+
+      console.info('Using k7_helper.exe for speedup');
+
+      let accounts = [];
+
+      let prc = spawn(exePath, [start, size, input, ...remove1, ...remove2]);
+
+      let isMPsTime = false;
+
+      prc.stdout.setEncoding('utf8');
+      prc.stdout.on('data', function (data) {
+        let str   = data.toString();
+
+        if (str.indexOf('!PrintingLines!') > -1) {
+          isMPsTime = true;
+          return;
+        }
+        if (str.indexOf('!WorkFinished!') > -1) {
+          return;
+        }
+
+        if (!isMPsTime) {
+          console.log(str);
+          return;
+        }
+
+        let lines = str.split("\n");
+
+        for (let i = 0; i < lines.length; i++) {
+          const line = lines[i];
+          if (line === "") continue;
+
+          let [email, password] = parseEmailPassword(line);
+          accounts.push({[left]:email, [right]:password})
+        }
+      });
+
+      prc.on('close', function (code) {
+        console.timeEnd('loading...');
+        return resolve(accounts)
+      });
+    })
+  }
+
 }
 
 module.exports = Base;
