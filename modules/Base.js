@@ -136,7 +136,7 @@ class Base {
     for (let base_path of base_paths) {
 
       let temp_lines = [];
-      if (!fs.existsSync(base_path)) {
+      if (!fs.existsSync(path.resolve('./k7_helper.exe'))) {
         temp_lines = await this.loadBase(base_path, remove_arr, remove_arr_v2, max_lines);
       } else {
         temp_lines = await this.PrepareLinesViaHelper(base_path, remove_arr, remove_arr_v2, max_lines);
