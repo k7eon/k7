@@ -126,10 +126,11 @@ class Base {
    * @param {string[]} base_paths
    * @param {string[]} remove_arr
    * @param {string[]} remove_arr_v2
+   * @param {string[]} remove_arr_v3
    * @param {number} max_lines
    * @returns {Promise<Array>}
    */
-  async loadQueue(base_paths, remove_arr = [], remove_arr_v2 = [], max_lines = 2000000) {
+  async loadQueue(base_paths, remove_arr = [], remove_arr_v2 = [], remove_arr_v3 = [], max_lines = 2000000) {
     console.log('Loading accounts from queue');
     console.log('paths', base_paths.join('\n'));
     let lines = [];
@@ -137,9 +138,15 @@ class Base {
 
       let temp_lines = [];
       if (!fs.existsSync(path.resolve('./k7_helper.exe'))) {
+
+        if (remove_arr_v3.length) {
+          console.error('withoutAccountsFromV3 currently not supported, withoutAccountsFromV3 used as withoutAccountsFromV1')
+          remove_arr = _.concat(remove_arr, remove_arr_v3); // todo fix it later
+        }
+
         temp_lines = await this.loadBase(base_path, remove_arr, remove_arr_v2, max_lines);
       } else {
-        temp_lines = await this.PrepareLinesViaHelper(base_path, remove_arr, remove_arr_v2, max_lines);
+        temp_lines = await this.PrepareLinesViaHelper(base_path, remove_arr, remove_arr_v2, remove_arr_v3, max_lines);
       }
 
       lines          = _.concat(lines, temp_lines);
@@ -315,7 +322,7 @@ class Base {
     return result;
   }
 
-  async PrepareLinesViaHelper(base_path, remove_arr = [], remove_arr_v2 = [], limit = 2000000) {
+  async PrepareLinesViaHelper(base_path, remove_arr = [], remove_arr_v2 = [], remove_arr_v3=[], limit = 2000000) {
     let parseEmailPassword = this.parseEmailPassword;
     let left = this.left_name;
     let right = this.right_name;
@@ -337,12 +344,13 @@ class Base {
       let input = base_path;
       let remove1 = _.map(remove_arr, (path) => {return "v1|"+path;});
       let remove2 = _.map(remove_arr_v2, (path) => {return "v2|"+path;});
+      let remove3 = _.map(remove_arr_v3, (path) => {return "v3|"+path;});
 
       console.info('Using k7_helper.exe for speedup');
 
       let accounts = [];
 
-      let prc = spawn(exePath, [start, size, input, ...remove1, ...remove2]);
+      let prc = spawn(exePath, [start, size, input, ...remove1, ...remove2, ...remove3]);
 
       let isMPsTime = false;
 

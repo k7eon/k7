@@ -15,6 +15,7 @@ class Config {
    * @param config.proxy_type            - http, https, socks and etc
    * @param config.withoutAccountsFrom   - ['bad', 'good'] where "email" or "email[:|;]pass"
    * @param config.withoutAccountsFromV2 - "logloglogloglog | email;pass"
+   * @param config.withoutAccountsFromV3 - skip lines where email1:pass1 same as in ['bad','good']
    * @param config.customConfigName      - 'configs/123.json',
    * @param config.proxy_url             - optional, path to file where url
    * @param config.addTimeTo             - optional, key name to file where add time
@@ -40,6 +41,12 @@ class Config {
 
     if (config.withoutAccountsFromV2 && config.withoutAccountsFromV2.length > 0) {
       config.withoutAccountsFromV2 = _.map(config.withoutAccountsFromV2, name => {
+        return config.FILE[name];
+      });
+    }
+
+    if (config.withoutAccountsFromV3 && config.withoutAccountsFromV3.length > 0) {
+      config.withoutAccountsFromV3 = _.map(config.withoutAccountsFromV3, name => {
         return config.FILE[name];
       });
     }

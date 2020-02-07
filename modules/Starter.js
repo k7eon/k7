@@ -23,9 +23,13 @@ class Starter {
   }
 
   async loadBase() {
-    let config                                       = this.config;
-    let {withoutAccountsFrom, withoutAccountsFromV2} = config;
-    let paths                                        = [config.FILE.source];
+    let config                                                              = this.config;
+    let {withoutAccountsFrom, withoutAccountsFromV2, withoutAccountsFromV3} = config;
+    let removeV1                                                            = withoutAccountsFrom;
+    let removeV2                                                            = withoutAccountsFromV2;
+    let removeV3                                                            = withoutAccountsFromV3;
+
+    let paths = [config.FILE.source];
 
     // if queue mode load paths
     if (config.mode && config.mode === 'queue') {
@@ -36,15 +40,12 @@ class Starter {
       }
     }
 
-    withoutAccountsFrom   = _.map(withoutAccountsFrom, (p) => {
-      return path.resolve(p);
-    });
-    withoutAccountsFromV2 = _.map(withoutAccountsFromV2, (p) => {
-      return path.resolve(p);
-    });
+    removeV1 = _.map(removeV1, p => path.resolve(p));
+    removeV2 = _.map(removeV2, p => path.resolve(p));
+    removeV3 = _.map(removeV3, p => path.resolve(p));
 
     const max_lines          = 2000000;
-    let accounts             = await this.base.loadQueue(paths, withoutAccountsFrom, withoutAccountsFromV2, max_lines);
+    let accounts             = await this.base.loadQueue(paths, removeV1, removeV2, removeV3, max_lines);
     this.bruteforce.accounts = accounts;
 
     let limit = this.config.THREADS * 10;
@@ -61,7 +62,7 @@ class Starter {
             b.queue.pause();
             let queued_accounts = b.leftAccounts();
 
-            let new_accounts = await this.base.loadQueue(paths, withoutAccountsFrom, withoutAccountsFromV2, max_lines);
+            let new_accounts = await this.base.loadQueue(paths, removeV1, removeV2, removeV3, max_lines);
 
             let free_accounts = _.filter(new_accounts, (account) => {
               return _.findIndex(queued_accounts, ['email', account.email]) === -1;
