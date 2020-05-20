@@ -68,8 +68,7 @@ class Bruteforce {
   }
 
   leftAccountsAmount() {
-    if (this.queue === undefined
-      || this.queue._tasks === undefined
+    if (!this.queue || this.queue._tasks === undefined
       || this.processing_accounts === undefined
     ) return -1;
 

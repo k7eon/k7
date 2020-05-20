@@ -44,51 +44,64 @@ class Starter {
     removeV2 = _.map(removeV2, p => path.resolve(p));
     removeV3 = _.map(removeV3, p => path.resolve(p));
 
-    const max_lines          = 2000000;
+    const max_lines          = 3000000;
     let accounts             = await this.base.loadQueue(paths, removeV1, removeV2, removeV3, max_lines);
     this.bruteforce.accounts = accounts;
 
-    let limit = this.config.THREADS * 10;
-    // reload base file to take more lines...
-    if (accounts.length > limit) {
-      setTimeout(async () => {
-        let b = this.bruteforce;
-
-        while (true) {
-          try {
-            // waiting while queued accounts ll come to limit
-            while (b.leftAccountsAmount() > limit) await b.timeout(100);
-
-            b.queue.pause();
-            let queued_accounts = b.leftAccounts();
-
-            let new_accounts = await this.base.loadQueue(paths, removeV1, removeV2, removeV3, max_lines);
-
-            let free_accounts = _.filter(new_accounts, (account) => {
-              return _.findIndex(queued_accounts, ['email', account.email]) === -1;
-            });
-            b.addAccounts(free_accounts);
-
-            b.queue.resume();
-
-            queued_accounts = [];
-            new_accounts    = [];
-            free_accounts   = [];
-
-            // if we loaded less accounts than limit that means that accounts ends
-            if (new_accounts < limit) break;
-
-          } catch (e) {
-            console.error('e', e);
-          }
-          await b.timeout(5000);
-        }
-      }, 5000)
-
-    }
-
     console.log(`loaded ${accounts.length} accounts`);
+
+    // if this latest lines chunk, dont wait next chunks
+    let limit = this.config.THREADS * 10;
+    if (accounts.length < limit) {
+      return;
+    }
     accounts = [];
+
+    // reload base file to take more lines...
+
+    let base = this.base;
+    let b = this.bruteforce;
+    // let self = this;
+    (async function() {
+      await b.timeout(5000);
+      while (true) {
+        try {
+          // waiting while queued accounts ll come to limit
+          while (b.leftAccountsAmount() > limit) {
+            await b.timeout(500);
+          }
+
+          // console.log('self', self);
+          b.queue.pause();
+          let queued_accounts = b.leftAccounts();
+
+          console.log('Uploading next chunk...')
+          let new_accounts = await base.loadQueue(paths, removeV1, removeV2, removeV3, max_lines);
+          let l = base.left_name;
+          let r = base.right_name;
+
+          let free_accounts = _.filter(new_accounts, (account) => {
+            return _.findIndex(queued_accounts, {[l]: account[l], [r]: account[r]}) === -1;
+          });
+          b.addAccounts(free_accounts);
+
+          b.queue.resume();
+
+
+          // if we loaded less accounts than limit that means that accounts ends
+          if (new_accounts < limit) {
+            break;
+          }
+
+          queued_accounts = [];
+          new_accounts    = [];
+          free_accounts   = [];
+
+        } catch (e) {
+          console.error('e', e);
+        }
+      }
+    })();
   }
 
   async loadProxies() {

@@ -350,7 +350,9 @@ class Base {
 
       let accounts = [];
 
-      let prc = spawn(exePath, [start, size, input, ...remove1, ...remove2, ...remove3]);
+      let resultPath = "";
+
+      let prc = spawn(exePath, [start, size, input, resultPath, ...remove1, ...remove2, ...remove3]);
 
       let isMPsTime = false;
 
@@ -380,6 +382,10 @@ class Base {
           let [email, password] = parseEmailPassword(line);
           accounts.push({[left]:email, [right]:password})
         }
+      });
+
+      prc.stderr.on('data', function (data) {
+        console.log(data.toString());
       });
 
       prc.on('close', function (code) {
