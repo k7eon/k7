@@ -369,7 +369,7 @@ class Base {
         }
 
         if (!isMPsTime) {
-          console.log(str);
+          console.log(str.replace(/\n$/i, ''));
           return;
         }
 
