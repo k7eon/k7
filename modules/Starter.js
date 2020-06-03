@@ -62,7 +62,7 @@ class Starter {
     let base = this.base;
     let b = this.bruteforce;
     // let self = this;
-    (async function() {
+    (async function () {
       await b.timeout(5000);
       while (true) {
         try {
@@ -77,8 +77,8 @@ class Starter {
 
           console.log('Uploading next chunk...')
           let new_accounts = await base.loadQueue(paths, removeV1, removeV2, removeV3, max_lines);
-          let l = base.left_name;
-          let r = base.right_name;
+          let l            = base.left_name;
+          let r            = base.right_name;
 
           let free_accounts = _.filter(new_accounts, (account) => {
             return _.findIndex(queued_accounts, {[l]: account[l], [r]: account[r]}) === -1;
@@ -87,6 +87,9 @@ class Starter {
 
           b.queue.resume();
 
+          if (b.leftAccountsAmount() < limit) {
+            break;
+          }
 
           // if we loaded less accounts than limit that means that accounts ends
           if (new_accounts < limit) {
@@ -101,7 +104,9 @@ class Starter {
           console.error('e', e);
         }
       }
-    })();
+    })().then(r => {
+
+    });
   }
 
   async loadProxies() {
